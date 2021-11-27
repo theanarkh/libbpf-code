@@ -2,9 +2,10 @@
 OUTPUT := .output
 CLANG ?= clang
 LLVM_STRIP ?= llvm-strip
-BPFTOOL ?= $(abspath ../../tools/bpftool)
-LIBBPF_OBJ := $(abspath ../../libbpf/src/libbpf.a)
-VMLINUX := ../../vmlinux/vmlinux.h
+LIBBPF_PATH = /home/ubuntu/libbpf-bootstrap
+BPFTOOL ?= $(LIBBPF_PATH)/tools/bpftool
+LIBBPF_OBJ := $(LIBBPF_PATH)/libbpf/src/libbpf.a
+VMLINUX := $(LIBBPF_PATH)/vmlinux/vmlinux.h
 # Use our own libbpf API headers and Linux UAPI headers distributed with
 # libbpf to avoid dependency on system-wide headers, which could be missing or
 # outdated
