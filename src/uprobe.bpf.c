@@ -4,19 +4,20 @@
 #include <linux/ptrace.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
+#include "uv.h"
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
-SEC("uprobe/func")
-int BPF_KPROBE(uprobe, int a, int b)
+SEC("uprobe/RunBootstrapping")
+int BPF_KPROBE(uprobe)
 {
-	bpf_printk("UPROBE ENTRY: a = %d, b = %d\n", a, b);
+	bpf_printk("RunBootstrapping start");
 	return 0;
 }
 
-SEC("uretprobe/func")
-int BPF_KRETPROBE(uretprobe, int ret)
+SEC("uretprobe/RunBootstrapping")
+int BPF_KRETPROBE(uretprobe)
 {
-	bpf_printk("UPROBE EXIT: return = %d\n", ret);
+	bpf_printk("RunBootstrapping end");
 	return 0;
 }

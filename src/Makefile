@@ -2,17 +2,18 @@
 OUTPUT := .output
 CLANG ?= clang
 LLVM_STRIP ?= llvm-strip
-BPFTOOL ?= $(abspath ../../tools/bpftool)
-LIBBPF_OBJ := $(abspath ../../libbpf/src/libbpf.a)
-VMLINUX := ../../vmlinux/vmlinux.h
+BPFTOOL ?= bpftool
+LIBBPF_OBJ := /usr/local/lib/libbpf.a
+VMLINUX := ../vmlinux/vmlinux.h
 # Use our own libbpf API headers and Linux UAPI headers distributed with
 # libbpf to avoid dependency on system-wide headers, which could be missing or
 # outdated
-INCLUDES := -I$(OUTPUT) -I$(dir $(VMLINUX))
+INCLUDES := -I$(OUTPUT) -I/usr/include/bpf -I/usr/local/include/ -I$(dir $(VMLINUX))
 CFLAGS := -g -Wall
 ARCH := $(shell uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm64/' | sed 's/ppc64le/powerpc/' | sed 's/mips.*/mips/')
 
-APPS = hello
+APPS = hello\
+	   uprobe \
 
 # Get Clang's default includes on this system. We'll explicitly add these dirs
 # to the includes list when compiling with `-target bpf` because otherwise some
@@ -77,4 +78,3 @@ $(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) | $(OUTPUT)
 
 # keep intermediate (.skel.h, .bpf.o, etc) targets
 .SECONDARY:
-
