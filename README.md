@@ -1,4 +1,4 @@
-# libbpf-code
+# libbpf based on 5.11.0-37-generic
 1. sudo apt install -y bison build-essential cmake flex git libedit-dev pkg-config libmnl-dev \
    python zlib1g-dev libssl-dev libelf-dev libcap-dev libfl-dev llvm clang pkg-config \
    gcc-multilib luajit libluajit-5.1-dev libncurses5-dev libclang-dev clang-tools
