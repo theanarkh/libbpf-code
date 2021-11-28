@@ -12,6 +12,9 @@ INCLUDES := -I$(OUTPUT) -I/usr/include/bpf -I/usr/local/include/ -I$(dir $(VMLIN
 CFLAGS := -g -Wall
 ARCH := $(shell uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm64/' | sed 's/ppc64le/powerpc/' | sed 's/mips.*/mips/')
 
+COMMON_OBJ = \
+	$(OUTPUT)/uprobe_helper.o \
+
 APPS = hello\
 	   uprobe \
 
@@ -69,7 +72,7 @@ $(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
 	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
 
 # Build application binary
-$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) | $(OUTPUT)
+$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(COMMON_OBJ) | $(OUTPUT)
 	$(call msg,BINARY,$@)
 	$(Q)$(CC) $(CFLAGS) $^ -lelf -lz -o $@
 
