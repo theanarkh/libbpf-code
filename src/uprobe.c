@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
 	// char * pid_str = argv[1];
 	// pid_t pid = (pid_t)atoi(pid_str);
-	char execpath[50000] = "/snap/node/5485/bin/node";
+	char execpath[50000] = "/usr/bin/node";
 	//sprintf(execpath, "%s%s%s", "/proc/", pid_str, "/exe");
 	// get function str by readelf -s | grep your functionname
 	uprobe_offset = get_elf_func_offset(execpath, "_ZN4node11Environment16RunBootstrappingEv");
