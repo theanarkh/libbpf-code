@@ -2,7 +2,7 @@
 OUTPUT := .output
 CLANG ?= clang
 LLVM_STRIP ?= llvm-strip
-BPFTOOL ?= bpftool
+BPFTOOL ?= ../bpftool# bpftool => you can install bpftool alone
 LIBBPF_OBJ := /usr/local/lib/libbpf.a
 VMLINUX := ../vmlinux/vmlinux.h
 # Use our own libbpf API headers and Linux UAPI headers distributed with
