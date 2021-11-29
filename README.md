@@ -1,4 +1,4 @@
-# libbpf based on 5.11.0-37-generic
+# use libbpf based on 5.11.0-37-generic
 1. sudo apt install -y bison build-essential cmake flex git libedit-dev libmnl-dev zlib1g-dev libssl-dev libelf-dev libcap-dev libfl-dev llvm clang pkg-config gcc-multilib luajit libluajit-5.1-dev libncurses5-dev libclang-dev clang-tools
 2. git clone https://github.com/libbpf/libbpf.git
 3. cd libbpf/src && make && make install && sudo cp libbpf.a /usr/local/lib
