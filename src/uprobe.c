@@ -40,6 +40,29 @@ int main(int argc, char **argv)
 	long base_addr, uprobe_offset;
 	int err, i;
 
+	char * pid_str = argv[1];
+	if (!pid_str) {
+		fprintf(stderr, "please input pid");
+		return;
+	}
+	pid_t pid = (pid_t)atoi(pid_str);
+	char execpath[500];
+	int ret = get_pid_binary_path(pid, execpath, 500);
+	if (ret == -1) {
+		fprintf(stderr, "invalid pid: %ld\n", pid);
+		return;
+	}
+
+	fprintf(stderr, "uprobe_execpath: %s\n", execpath);
+	// get function str by readelf -s | grep your functionname
+	char * func = "uv_tcp_listen";
+	uprobe_offset = get_elf_func_offset(execpath, func);
+	if (uprobe_offset == -1) {
+		fprintf(stderr, "invalid function &s: %s\n", func);
+		return;
+	}
+	fprintf(stderr, "uprobe_offset: %ld\n", uprobe_offset);
+
 	/* Set up libbpf errors and debug info callback */
 	libbpf_set_print(libbpf_print_fn);
 
@@ -53,14 +76,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	// char * pid_str = argv[1];
-	// pid_t pid = (pid_t)atoi(pid_str);
-	char execpath[50000] = "/usr/bin/node";
-	//sprintf(execpath, "%s%s%s", "/proc/", pid_str, "/exe");
-	// get function str by readelf -s | grep your functionname
-	uprobe_offset = get_elf_func_offset(execpath, "_ZN4node11Environment16RunBootstrappingEv");
-	fprintf(stderr, "uprobe_offset: %ld\n", uprobe_offset);
-	fprintf(stderr, "uprobe_execpath: %s\n", execpath);
 	/* Attach tracepoint handler */
 	skel->links.uprobe = bpf_program__attach_uprobe(skel->progs.uprobe,
 							false /* not uretprobe */,
