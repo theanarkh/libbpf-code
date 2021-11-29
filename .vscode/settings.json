@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "errno.h": "c"
+        "errno.h": "c",
+        "bpf_tracing.h": "c",
+        "bpf_helpers.h": "c",
+        "bpf.h": "c",
+        "uv.h": "c",
+        "vmlinux.h": "c",
+        "uprobe.skel.h": "c",
+        "memory.skel.h": "c"
     }
 }
