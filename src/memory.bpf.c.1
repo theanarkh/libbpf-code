@@ -1,0 +1,81 @@
+// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
+/* Copyright (c) 2020 Facebook */
+#include <linux/bpf.h>
+#include <linux/ptrace.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
+#include <stddef.h>
+#define PERF_MAX_STACK_DEPTH         127
+char LICENSE[] SEC("license") = "Dual BSD/GPL";
+typedef unsigned short int u32;
+typedef unsigned long u64;
+struct key_t {
+
+u32 kernstack;
+
+u32 userstack;
+};
+
+struct {     
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10000);
+    __type(key, struct key_t);
+    __type(value, u64);
+} counts SEC(".maps");
+
+struct {
+	__uint(type, BPF_MAP_TYPE_STACK_TRACE);
+	__uint(max_entries, 16384);
+	__uint(key_size, sizeof(__u32));
+	__uint(value_size, sizeof(u64));
+} stackmap SEC(".maps");
+
+#define KERN_STACKID_FLAGS (0 | BPF_F_FAST_STACK_CMP)
+
+#define USER_STACKID_FLAGS (0 | BPF_F_FAST_STACK_CMP | BPF_F_USER_STACK)
+SEC("uprobe/malloc")
+int BPF_KPROBE(uprobe_malloc, size_t size)
+{
+	u64 *val, one = 1;
+	struct key_t key;
+	key.kernstack = bpf_get_stackid(ctx, &stackmap, KERN_STACKID_FLAGS);
+	key.userstack = bpf_get_stackid(ctx, &stackmap, USER_STACKID_FLAGS);
+	if ((int)key.kernstack < 0 && (int)key.userstack < 0) {
+		bpf_printk("error");
+		return 0;
+	}
+
+	val = bpf_map_lookup_elem(&counts, &key);
+	if (val)
+		(*val)++;
+	else
+		bpf_map_update_elem(&counts, &key, &one, BPF_NOEXIST);
+	char buf[100];
+	bpf_get_stack(ctx, buf, 100, 0);
+	bpf_printk("malloc start %d\n stack %lu %s\n", size, val, buf);
+	return 0;
+}
+
+SEC("uretprobe/malloc")
+int BPF_KRETPROBE(uretprobe_malloc, void* p)
+{
+	bpf_printk("malloc end %p \n", p);
+	return 0;
+}
+
+SEC("uprobe/free")
+int BPF_KPROBE(uprobe_free, void * p)
+{
+	bpf_printk("free start\n");
+	return 0;
+}
+
+SEC("uretprobe/free")
+int BPF_KRETPROBE(uretprobe_free)
+{
+	bpf_printk("free end\n");
+	return 0;
+}
+
+
+

@@ -19,7 +19,7 @@ APPS = hello\
 	   uprobe \
 	   kprobe \
 	   memory \
-
+	   uv_uprobe \
 # Get Clang's default includes on this system. We'll explicitly add these dirs
 # to the includes list when compiling with `-target bpf` because otherwise some
 # architecture-specific dirs will be "missing" on some architectures/distros -
