@@ -42,7 +42,7 @@ static void sig_int(int signo)
 static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
 	const struct event *e = (const struct event *)data;
-	printf("%s %llu\n", "poll io", (e->end_time - e->start_time) / 1000 / 1000);
+	printf("%s %llu\n", e->name, (e->end_time - e->start_time) / 1000 / 1000);
 }
 
 static void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
@@ -71,14 +71,6 @@ int main(int argc, char **argv)
 	}
 
 	fprintf(stderr, "uprobe_execpath: %s\n", execpath);
-	// get function str by readelf -s | grep your functionname
-	char * func = "uv__io_poll";
-	uprobe_offset = get_elf_func_offset(execpath, func);
-	if (uprobe_offset == -1) {
-		fprintf(stderr, "invalid function &s: %s\n", func);
-		return;
-	}
-	fprintf(stderr, "uprobe_offset: %ld\n", uprobe_offset);
 
 	/* Set up libbpf errors and debug info callback */
 	libbpf_set_print(libbpf_print_fn);
@@ -98,27 +90,42 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 	/* Attach tracepoint handler */
-	skel->links.uprobe_uv__io_poll = bpf_program__attach_uprobe(skel->progs.uprobe_uv__io_poll,
-							false /* not uretprobe */,
-							-1,
-							execpath,
-							uprobe_offset);
-	err = libbpf_get_error(skel->links.uprobe_uv__io_poll);
-	if (err) {
-		fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-		goto cleanup;
-	}
 
-	skel->links.uretprobe_uv__io_poll = bpf_program__attach_uprobe(skel->progs.uretprobe_uv__io_poll,
-							   true /* uretprobe */,
-							   -1 /* any pid */,
-							   execpath,
-							   uprobe_offset);
-	err = libbpf_get_error(skel->links.uretprobe_uv__io_poll);
-	if (err) {
-		fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-		goto cleanup;
-	}
+	// get function str by readelf -s | grep your functionname
+	
+
+	#define ATTACH_UPROBE(type)  \
+		do \
+		{	char * func_##type = #type; \
+			uprobe_offset = get_elf_func_offset(execpath, func_##type); \
+			if (uprobe_offset == -1) { \
+				fprintf(stderr, "invalid function &s: %s\n", func_##type); \
+				break; \
+			} \
+			fprintf(stderr, "uprobe_offset: %ld\n", uprobe_offset);\
+			skel->links.uprobe_##type = bpf_program__attach_uprobe(skel->progs.uprobe_##type,\
+									false /* not uretprobe */,\
+									pid,\
+									execpath,\
+									uprobe_offset);\
+			err = libbpf_get_error(skel->links.uprobe_##type);\
+			if (err) {\
+				fprintf(stderr, "Failed to attach uprobe: %d\n", err);\
+				goto cleanup;\
+			}\
+			skel->links.uretprobe_##type = bpf_program__attach_uprobe(skel->progs.uretprobe_##type,\
+									true /* uretprobe */,\
+									pid /* any pid */,\
+									execpath,\
+									uprobe_offset);\
+			err = libbpf_get_error(skel->links.uretprobe_##type);\
+			if (err) {\
+				fprintf(stderr, "Failed to attach uprobe: %d\n", err);\
+				goto cleanup;\
+			}\
+		} while(false); 
+
+	PHASE(ATTACH_UPROBE)
 
 	if (signal(SIGINT, sig_int) == SIG_ERR) {
 		printf("can't set signal handler: %s\n", strerror(errno));

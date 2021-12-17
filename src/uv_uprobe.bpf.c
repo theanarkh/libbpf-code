@@ -24,33 +24,31 @@ struct {
 	__uint(value_size, sizeof(__u32));
 } events SEC(".maps");
 
-static __u64 id = 0;
-SEC("uprobe/uv__io_poll")
-int BPF_KPROBE(uprobe_uv__io_poll, uv_loop_t* loop, int timeout)
-{
-	__u64 current_id = id;
-	__u64 time = bpf_ktime_get_ns();
-	bpf_map_update_elem(&values, &current_id, &time, BPF_ANY);
-	return 0;
+#define PROBE(type) \
+SEC("uprobe/" #type) \
+int BPF_KPROBE(uprobe_##type) \
+{ \
+	char key[20] = #type; \
+	__u64 time = bpf_ktime_get_ns(); \
+	bpf_map_update_elem(&values, &key, &time, BPF_ANY); \
+	return 0; \
+} \
+SEC("uretprobe/" #type) \
+int BPF_KRETPROBE(uretprobe_##type) \
+{	\
+	char key[20] = #type; \
+	__u64 *time = bpf_map_lookup_elem(&values, &key); \
+	if (!time) { \
+		return 0; \
+	} \
+	struct event e = { \
+		.name=#type \
+	}; \
+	e.start_time = *time; \
+	e.end_time = bpf_ktime_get_ns(); \
+	bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &e, sizeof(e)); \
+	bpf_map_delete_elem(&values, key); \
+	return 0; \
 }
 
-const char * uv__io_poll_name = "uv__io_poll";
-SEC("uretprobe/uv__io_poll")
-int BPF_KRETPROBE(uretprobe_uv__io_poll)
-{	
-	__u64 current_id = id;
-	__u64 *time = bpf_map_lookup_elem(&values, &current_id);
-	if (!time) {
-		return 0;
-	}
-	// char comm[16];
-	// bpf_get_current_comm(&comm, sizeof(comm));
-	struct event e;
-	//bpf_probe_read_user_str(e.name, sizeof(e.name), uv__io_poll_name);
-	e.start_time = *time;
-	e.end_time = bpf_ktime_get_ns();
-	bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &e, sizeof(e));
-	bpf_map_delete_elem(&values, &current_id);
-	id++;
-	return 0;
-}
+PHASE(PROBE)
