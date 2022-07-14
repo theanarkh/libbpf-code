@@ -7,3 +7,5 @@
 6. cd libbpf-code/src && make
 7. sudo ./hello
 
+
+[使用 ebpf 监控 Node.js 事件循环的耗时](https://blog.csdn.net/THEANARKH/article/details/122006904)
